@@ -1,0 +1,73 @@
+package org.example.raycaster;
+
+public class Camera {
+    private float positionX;
+    private float positionY;
+    private float positionZ = 20f;
+
+    private float directionX;
+    private float directionY;
+
+    float fov = 75;
+
+    private float angle;
+
+
+    public void Camera(){
+        calculateDirection();
+    }
+
+
+    private void calculateDirection(){
+        this.directionX = (float) Math.cos(angle);
+        this.directionY = (float) Math.sin(angle);
+    }
+
+
+    // camera movements
+
+    public void MoveCameraForward(float amount){
+        this.positionX += directionX * amount;
+        this.positionY += directionY * amount;
+
+    }
+
+    public void Turn(float amount){
+        setAngle(angle + amount);
+    }
+
+
+    // ========== SETTERS ============
+
+    public void setAngle(float inAngle){
+        this.angle = MathHelper.getSafeAngle(inAngle);
+        calculateDirection();
+    }
+
+
+    // ========== GETTERS ============
+    public float getPositionX(){
+        return this.positionX;
+    }
+
+    public float getPositionY(){
+        return this.positionY;
+    }
+
+    public float getPositionZ(){
+        return this.positionZ;
+    }
+
+
+    public float getAngle(){
+        return this.angle;
+    }
+
+    public float getDirectionX(){
+        return this.directionX;
+    }
+
+    public float getDirectionY(){
+        return this.directionY;
+    }
+}
