@@ -60,8 +60,10 @@ public class Textures {
 
     public static int[] wallTextures;
 
-    public static int[] getWallRGB(int pixelX, int pixelY){
-        int index = pixelY * 256 + pixelX;
+    public static int[] getWallRGB(int pixelX, int pixelY, int textureIndex){
+
+        int fPxy = (textureIndex / 8) * 32;
+        int index = ((pixelY + fPxy) * 256 + pixelX) + ((textureIndex % 8) * 32) ;
         if (index < wallTextures.length && index >= 0){
             int value = wallTextures[index];
             int r = (value >> 16) & 255;

@@ -40,14 +40,14 @@ public class Renderer {
             1,1,1,1,1,1,1,1,1,1,1,1,
             1,0,0,1,0,0,0,0,0,0,0,1,
             1,0,0,1,0,0,0,0,0,0,0,1,
-            1,0,0,1,1,1,1,0,0,0,0,1,
+            1,0,0,1,1,1,1,3,3,0,0,1,
             1,0,0,0,0,0,0,0,0,0,0,1,
             1,0,0,0,0,0,0,0,0,0,0,1,
-            1,0,0,0,0,0,0,0,0,0,0,1,
-            1,0,0,0,0,0,0,0,0,0,0,1,
-            1,0,0,0,0,2,0,0,0,0,0,1,
-            1,0,0,0,0,0,0,0,0,0,0,1,
-            1,0,0,0,0,0,0,0,0,0,0,1,
+            9,0,0,0,0,2,0,0,0,0,0,9,
+            9,0,0,0,0,2,0,0,0,0,0,9,
+            9,0,0,0,0,2,0,0,0,0,0,9,
+            9,0,0,0,0,0,0,0,0,3,3,1,
+            9,0,0,0,0,0,0,0,0,3,3,1,
             1,1,1,1,1,1,1,1,1,1,1,1,
     };
 
@@ -165,6 +165,10 @@ public class Renderer {
     // ----- edit after fully implementing it ----------
     // yea this algorithm runs much better
     // should've used this from the start
+    // ------- edit 2 --------
+    // forgot to make the caster remember the last hit index
+    // without doing this it will render inside faces of tiles
+    // and that ruins transparency
     private ArrayList<RaycastResult> castRay(float inRayX, float inRayY, float inRayA) {
         float safeAngle = MathHelper.getSafeAngle(inRayA);
         float rayDirX = (float) Math.cos(safeAngle);
@@ -180,6 +184,8 @@ public class Renderer {
         int mapCheckY =  (int) Math.floor((inRayY) / mapCellSize);
 
         int stepX,stepY;
+
+        int lastHitTile = -1;
 
         ArrayList<RaycastResult> output = new ArrayList<>();
 
@@ -239,11 +245,13 @@ public class Renderer {
 
             // check if tile is solid
             if( mapCheckX >= 0 && mapCheckX < mapX && mapCheckY >= 0 && mapCheckY < mapY) {
-                if (map[mapCheckY * mapX + mapCheckX] >= 1) {
+                int tileIndex = mapCheckY * mapX + mapCheckX;
+                if (map[tileIndex] >= 1 && tileIndex != lastHitTile) {
                     float endX = inRayX + rayDirX * distance;
                     float endY = inRayY + rayDirY * distance;
                     RaycastResult result = new RaycastResult(endX, endY,distance, inRayA, side, mapCheckY * mapX + mapCheckX, true);
                     output.add(result);
+                    lastHitTile = tileIndex;
                     renderDepth++;
                 }
             }
@@ -280,6 +288,15 @@ public class Renderer {
 
                 depth[i] = ray.getHitDist();
 
+                // grab tile value rq
+
+                int tileValue = 0;
+                if (ray.getTileIndex() >= 0 && ray.getTileIndex() < map.length)
+                {
+                    tileValue = map[ray.getTileIndex()];
+                }
+
+
                 // Note to future self:
                 // That ((mapCellSize * HEIGHT)/raydist) line, you don't need to use window height
                 // you could add A arbetrary value there and use that have variable wall heights
@@ -289,7 +306,7 @@ public class Renderer {
                 // alot of opportunity there
 
 
-                float wallMulti = (map[ray.getTileIndex()] > 1) ? 2.5f : 1f;
+                float wallMulti = (map[ray.getTileIndex()] > 1) ? 1f : 1f;
 
                 int ScreenYDown = (int) (((HEIGHT / 2f) - ((floorHeight) - (activeCamera.getPositionZ()) * d )/ raydist));
                 int ScreenYUp = (int) (((HEIGHT / 2f) - ((float) (floorHeight + (wallHeight ) * wallMulti - (activeCamera.getPositionZ() )) * d ) / raydist));
@@ -360,11 +377,17 @@ public class Renderer {
 
 
 
-                    int pixelX = (int) (((uvX) * 32f) % 32) + 32;
+                    int pixelX = (int) (((uvX) * 32f) % 32) ;
                     int pixelY = (int) ((uvY * 32f) % 32);
 
 
-                    int[] rgb = Textures.getWallRGB(pixelX,pixelY);
+                    int[] rgb = Textures.getWallRGB(pixelX,pixelY, tileValue - 1);
+
+
+                    // mask out transparent pixels
+                    if ( rgb[0] == 255 && rgb[1] == 0 && rgb[2] == 255){
+                        continue;
+                    }
 
 
                     setSquare(lineX, y, pixelSizeX, pixelSizeX, (int) (rgb[0]), (int) (rgb[1]), (int) (rgb[2]));
@@ -480,7 +503,7 @@ public class Renderer {
                     int pixelX = (int) (tx % 32);
                     int pixelY = (int) (ty % 32);
 
-                    int[] rgb = Textures.getWallRGB(pixelX,pixelY);
+                    int[] rgb = Textures.getWallRGB(pixelX,pixelY, tileValue - 1);
 
 
                     setSquare(x * floorRes, y * floorRes, floorRes, floorRes, (int) ( rgb[0]) , (int) (rgb[1]), (int) (rgb[2]));
