@@ -34,8 +34,9 @@ public class Renderer {
 
     int mapX = 12;
     int mapY = 12;
-    int mapCellSize = 75;
 
+
+    /*
     int[] map = {
             1,1,1,1,1,1,1,1,1,1,1,1,
             1,0,0,1,0,0,0,0,0,0,0,1,
@@ -51,21 +52,11 @@ public class Renderer {
             1,1,1,1,1,1,1,1,1,1,1,1,
     };
 
-    int[] ceilingMap = {
-            1,1,1,1,1,1,1,1,1,1,1,1,
-            1,1,1,1,1,1,1,1,1,1,1,1,
-            1,1,1,1,1,1,1,1,1,1,1,1,
-            1,1,1,1,1,1,1,1,1,1,1,1,
-            1,1,1,1,1,1,1,1,1,1,1,1,
-            1,1,1,1,1,1,1,1,1,1,1,1,
-            1,0,0,0,0,0,0,0,0,0,0,1,
-            1,0,0,0,0,0,0,0,0,0,0,1,
-            1,0,0,0,0,0,0,0,0,0,0,1,
-            1,0,0,0,0,0,0,0,0,0,0,1,
-            1,0,0,0,0,0,0,0,0,0,0,1,
-            1,1,1,1,1,1,1,1,1,1,1,1,
-    };
+     */
 
+
+
+    Map map = new Map();
 
     // create a depth map for the screen
     float[] depth = new float[rayCount];
@@ -99,6 +90,10 @@ public class Renderer {
     }
 
 
+
+
+
+
     // Render 2d Map view
 
     private void draw2dMap(){
@@ -109,7 +104,7 @@ public class Renderer {
         for(int y=0; y < mapY; y++){
             for( int x=0; x < mapX; x++){
                 int r,g,b;
-                if( map[y * mapX + x] == 1) {
+                if( map.getTile(y * mapX + x) == 1) {
                     r = 255;
                     g = 255;
                     b = 0;
@@ -119,7 +114,8 @@ public class Renderer {
                     b = 0;
                 }
 
-                setSquare(x * mapCellSize ,y * mapCellSize, mapCellSize, mapCellSize,r,g,b);
+
+                setSquare(x * (int) map.getMapCellSize() ,y * (int) map.getMapCellSize(), (int) map.getMapCellSize(), (int) map.getMapCellSize(),r,g,b);
 
                 //setPixel(x,y,r,g,b);
             }
@@ -130,10 +126,10 @@ public class Renderer {
 
 
     private void draw2dPlayer(){
-        int squareSize = mapCellSize;
+        int squareSize = (int) map.getMapCellSize();
         int drawX = (int) (activeCamera.getPositionX());
         int drawY = (int) (activeCamera.getPositionY());
-        int playerSize = mapCellSize / 2;
+        int playerSize = (int) map.getMapCellSize() / 2;
         setSquare(drawX - playerSize / 2 ,drawY - playerSize / 2, playerSize,playerSize,0,255,0);
 
 
@@ -142,7 +138,6 @@ public class Renderer {
         int linesize = 55;
         setLine(drawX, drawY, drawX + (int ) ( activeCamera.getDirectionX() * linesize), drawY + (int) ( activeCamera.getDirectionY() * linesize), 0,255,0);
 
-        castRay(activeCamera.getPositionX(),activeCamera.getPositionY(),activeCamera.getAngle());
 
         //System.out.printf("Player Pos: X:%f Y:%f%n", plx,ply);
     }
@@ -158,107 +153,7 @@ public class Renderer {
     }
 
 
-    // dda implementation of casting a ray
-    // more efficient algorithm than the first iteration i wrote
-    // first one i wrote was poop
-    // It checked x and y in different while loops and ran slow
-    // ----- edit after fully implementing it ----------
-    // yea this algorithm runs much better
-    // should've used this from the start
-    // ------- edit 2 --------
-    // forgot to make the caster remember the last hit index
-    // without doing this it will render inside faces of tiles
-    // and that ruins transparency
-    private ArrayList<RaycastResult> castRay(float inRayX, float inRayY, float inRayA) {
-        float safeAngle = MathHelper.getSafeAngle(inRayA);
-        float rayDirX = (float) Math.cos(safeAngle);
-        float rayDirY = (float) Math.sin(safeAngle);
 
-        float stepSizeX = (float) Math.sqrt(1 + (rayDirY / rayDirX) * (rayDirY / rayDirX)) * mapCellSize;
-        float stepSizeY = (float) Math.sqrt(1 + (rayDirX / rayDirY) * (rayDirX / rayDirY)) * mapCellSize;
-
-        float rayLengthX = 0;
-        float rayLengthY = 0;
-
-        int mapCheckX = (int) Math.floor((inRayX) / mapCellSize);
-        int mapCheckY =  (int) Math.floor((inRayY) / mapCellSize);
-
-        int stepX,stepY;
-
-        int lastHitTile = -1;
-
-        ArrayList<RaycastResult> output = new ArrayList<>();
-
-        // starting condition checks
-        // gets everything ready for iteration
-        if ( rayDirX < 0)
-        {
-            stepX = -1;
-            rayLengthX = (inRayX -( mapCheckX * mapCellSize));
-        }else{
-            stepX = 1;
-            rayLengthX = ( (mapCheckX + 1 ) * mapCellSize) - inRayX;
-        }
-
-        if ( rayDirY < 0)
-        {
-            stepY = -1;
-            rayLengthY = (inRayY -( mapCheckY * mapCellSize));
-        }else{
-            stepY = 1;
-            rayLengthY = (( (mapCheckY + 1 ) * mapCellSize) - inRayY);
-        }
-
-        rayLengthX = rayLengthX / Math.abs(rayDirX);
-        rayLengthY = rayLengthY / Math.abs( rayDirY);
-
-        // Da loop
-        boolean foundEnd = false;
-        float maxDist = 1000; // Arbitrary value, just make it high
-        float distance = 0;
-        boolean side = false;
-        // I use a limited render depth
-        // basically this controls how many more tiles it will check after finding the collision
-        // this could cause something like lets say a shorter wall behind a transparent fence to not show
-        //  the wall all the way at the end, but its good for performance
-        int maxRenderDepth = 3;
-
-        int renderDepth = 0;
-
-        // the whole raycasting thing
-        while(!foundEnd && distance < maxDist && renderDepth < maxRenderDepth)
-        {
-            // do the walk through the map
-            if(rayLengthX < rayLengthY)
-            {
-                mapCheckX += stepX;
-                distance = rayLengthX;
-                rayLengthX += stepSizeX;
-                side = true;
-            }else
-            {
-                mapCheckY += stepY;
-                distance = rayLengthY;
-                rayLengthY += stepSizeY;
-                side = false;
-            }
-
-            // check if tile is solid
-            if( mapCheckX >= 0 && mapCheckX < mapX && mapCheckY >= 0 && mapCheckY < mapY) {
-                int tileIndex = mapCheckY * mapX + mapCheckX;
-                if (map[tileIndex] >= 1 && tileIndex != lastHitTile) {
-                    float endX = inRayX + rayDirX * distance;
-                    float endY = inRayY + rayDirY * distance;
-                    RaycastResult result = new RaycastResult(endX, endY,distance, inRayA, side, mapCheckY * mapX + mapCheckX, true);
-                    output.add(result);
-                    lastHitTile = tileIndex;
-                    renderDepth++;
-                }
-            }
-        }
-
-        return output;
-    }
 
 
 
@@ -273,7 +168,7 @@ public class Renderer {
             float rayAngle = activeCamera.getAngle() + (float) Math.atan(angleMult * (float) Math.tan((fov * DEGREE) / 2));
 
 
-            ArrayList<RaycastResult> rays = castRay(activeCamera.getPositionX(), activeCamera.getPositionY(), rayAngle);
+            ArrayList<RaycastResult> rays = map.castRay(activeCamera.getPositionX(), activeCamera.getPositionY(), rayAngle);
 
             for (RaycastResult ray : rays.reversed() ) {
                 if (!ray.didHit()) continue;
@@ -290,23 +185,20 @@ public class Renderer {
 
                 // grab tile value rq
 
-                int tileValue = 0;
-                if (ray.getTileIndex() >= 0 && ray.getTileIndex() < map.length)
-                {
-                    tileValue = map[ray.getTileIndex()];
-                }
+                int tileValue = map.getTile(ray.getTileIndex());
+
 
 
                 // Note to future self:
                 // That ((mapCellSize * HEIGHT)/raydist) line, you don't need to use window height
                 // you could add A arbetrary value there and use that have variable wall heights
-                // could only really be used for adding height to buildings as theres no rendering for tops of floors
+                // could only really be used for adding height to buildings as there's no rendering for tops of floors
                 // but could be an interesting technique
                 // say maybe a scene with a fence and some walls past it
                 // alot of opportunity there
 
 
-                float wallMulti = (map[ray.getTileIndex()] > 1) ? 1f : 1f;
+                float wallMulti = (tileValue > 1) ? 0.5f : 1f;
 
                 int ScreenYDown = (int) (((HEIGHT / 2f) - ((floorHeight) - (activeCamera.getPositionZ()) * d )/ raydist));
                 int ScreenYUp = (int) (((HEIGHT / 2f) - ((float) (floorHeight + (wallHeight ) * wallMulti - (activeCamera.getPositionZ() )) * d ) / raydist));
@@ -343,12 +235,12 @@ public class Renderer {
                 float uvX = 0;
                 // calculate uvX
                 if (!ray.hitVerticle) {
-                    uvX = (ray.getRayX() / mapCellSize) % 1;
+                    uvX = (ray.getRayX() / map.getMapCellSize()) % 1;
                     if (ray.getRayAngle() < PI) {
                         uvX =  1- uvX;
                     }
                 } else {
-                    uvX = (ray.getRayY() / mapCellSize) % 1;
+                    uvX = (ray.getRayY() / map.getMapCellSize()) % 1;
                     if (ray.getRayAngle() > PI2 && ray.getRayAngle() < PI3) {
                         uvX = 1 - uvX;
                     }
@@ -384,10 +276,17 @@ public class Renderer {
                     int[] rgb = Textures.getWallRGB(pixelX,pixelY, tileValue - 1);
 
 
+
+
                     // mask out transparent pixels
                     if ( rgb[0] == 255 && rgb[1] == 0 && rgb[2] == 255){
+                        uvY += uvYStep;
+                        if (uvY >= 1) {
+                            uvY = 1;
+                        }
                         continue;
                     }
+
 
 
                     setSquare(lineX, y, pixelSizeX, pixelSizeX, (int) (rgb[0]), (int) (rgb[1]), (int) (rgb[2]));
@@ -442,6 +341,8 @@ public class Renderer {
             // Calculations for floor projection
             float rowDistance = (float) Math.abs((heightFactor  * d)  / ((y * floorRes) - ((float) HEIGHT / 2f)));
 
+
+            float mapCellSize = map.getMapCellSize();
             float floorStepX = (rowDistance / mapCellSize) * (rayDirX1 - rayDirX0) / WIDTH;
             float floorStepY = (rowDistance / mapCellSize) * (rayDirY1 - rayDirY0) / WIDTH;
 
@@ -470,7 +371,7 @@ public class Renderer {
 
                 if(tileX >= 0 && tileX < mapX && tileY >= 0 && tileY < mapY){
 
-                    tileValue = ceilingMap[tileY * mapX + tileX];
+                    tileValue = map.getCeilingTile(tileY * mapX + tileX);
                 }
 
                 floorX += floorStepX * floorRes;
@@ -566,7 +467,7 @@ public class Renderer {
 
             int spritePXS = 2;
             float spriteWorldSize = 300;
-            int spriteSize = (int) ( (spriteWorldSize * mapCellSize) / -b  ) ;
+            int spriteSize = (int) ( (spriteWorldSize * map.mapCellSize) / -b  ) ;
 
             int startX = (int) ScreenX - spriteSize / 2;
             int endX = (int) ScreenX + spriteSize / 2;
