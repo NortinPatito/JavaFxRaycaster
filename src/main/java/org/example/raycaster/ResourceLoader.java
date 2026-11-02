@@ -1,0 +1,64 @@
+package org.example.raycaster;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
+
+public class ResourceLoader {
+
+    public static int[]  loadTexture(String file) {
+        String resourcePath = file;
+
+        try (InputStream is = ResourceLoader.class.getResourceAsStream(resourcePath)) {
+            if (is == null) {
+                throw new IllegalArgumentException("Resource not found: " + resourcePath);
+            }
+            ;
+
+            try (InputStreamReader isr = new InputStreamReader(is, StandardCharsets.UTF_8);
+                 BufferedReader reader = new BufferedReader(isr)) {
+
+                List<String> lines = reader.lines().toList();
+                int lineCount = lines.size();
+                int[] textureBuffer = new int[lineCount / 3];
+                int i =0;
+                int pixelIndex = 0;
+                int r = 0, g =0, b= 0;
+
+                for(String line : lines) {
+                    int value = Integer.parseInt(line.toString());
+                    switch(i){
+                        case 0:
+                            r = value;
+                            i++;
+                            break;
+                        case 1:
+                            g = value;
+                            i++;
+                            break;
+                        case 2:
+                            b = value;
+                            // bit shift the colors to save on memory
+                            int rgb = (r << 16) | (g << 8) | b;
+                            textureBuffer[pixelIndex] = rgb;
+                            pixelIndex++;
+                            i = 0;
+                            break;
+                    }
+                }
+
+                return textureBuffer;
+
+            } catch (Exception e) {
+                throw new RuntimeException(e);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        return new int[0];
+    }
+}

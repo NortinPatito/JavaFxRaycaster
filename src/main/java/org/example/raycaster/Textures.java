@@ -11,51 +11,7 @@ public class Textures {
     public void loadTextures() {
         String resourcePath = "/walltextures.ppm";
 
-        try (InputStream is = this.getClass().getResourceAsStream(resourcePath)) {
-            if (is == null) {
-                throw new IllegalArgumentException("Resource not found: " + resourcePath);
-            }
-            ;
-
-            try (InputStreamReader isr = new InputStreamReader(is, StandardCharsets.UTF_8);
-                 BufferedReader reader = new BufferedReader(isr)) {
-
-                List<String> lines = reader.lines().toList();
-                int lineCount = lines.size();
-                wallTextures = new int[lineCount / 3];
-                int i =0;
-                int pixelIndex = 0;
-                int r = 0, g =0, b= 0;
-
-                for(String line : lines) {
-                    int value = Integer.parseInt(line.toString());
-                    switch(i){
-                        case 0:
-                            r = value;
-                            i++;
-                            break;
-                        case 1:
-                            g = value;
-                            i++;
-                            break;
-                        case 2:
-                            b = value;
-                            // bit shift the colors to save on memory
-                            int rgb = (r << 16) | (g << 8) | b;
-                            wallTextures[pixelIndex] = rgb;
-                            pixelIndex++;
-                            System.out.println(pixelIndex);
-                            i = 0;
-                            break;
-                    }
-                }
-
-            } catch (Exception e) {
-                throw new RuntimeException(e);
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
+        wallTextures = ResourceLoader.loadTexture("/wallTextures.ppm");
     }
 
     public static int[] wallTextures;
