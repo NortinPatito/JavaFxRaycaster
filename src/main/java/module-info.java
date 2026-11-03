@@ -6,4 +6,6 @@ module org.example.raycaster {
 
     opens org.example.raycaster to javafx.fxml;
     exports org.example.raycaster;
+    exports org.example.raycaster.Entities;
+    opens org.example.raycaster.Entities to javafx.fxml;
 }

@@ -248,7 +248,7 @@ public class Renderer {
 
                 // shading factor
 
-                float shade = ray.hitVerticle ? 0.5f : 1f;
+                float shade = ray.hitVerticle ? 0.75f : 1f;
 
 
                 // draw the wall line
@@ -289,7 +289,7 @@ public class Renderer {
 
 
 
-                    setSquare(lineX, y, pixelSizeX, pixelSizeX, (int) (rgb[0]), (int) (rgb[1]), (int) (rgb[2]));
+                    setSquare(lineX, y, pixelSizeX, pixelSizeX, (int) (rgb[0] * shade), (int) (rgb[1] * shade), (int) (rgb[2] * shade));
                     //setSquare(lineX, y, pixelSizeX, pixelSizeX, (int) (uvX * 255), (int) (uvY * 255), (int) (0));
 
 
@@ -439,14 +439,14 @@ public class Renderer {
     public void drawSprite(float x, float y, float z){
         float spriteX = x - activeCamera.getPositionX();
         float spriteY = y - activeCamera.getPositionY();
-        float spriteZ = (z + (float) floorHeight );
+        float spriteZ = z;
 
 
 
         // math makes the point rotate around the player
         // tbh I don't understand it too well
-        float cs = (float) -Math.cos(activeCamera.getAngle());
-        float sn = (float) -Math.sin(activeCamera.getAngle());
+        float cs = (float) Math.cos(activeCamera.getAngle());
+        float sn = (float) Math.sin(activeCamera.getAngle());
 
         float a = spriteY * cs - spriteX * sn;
         float b = spriteX * cs + spriteY * sn;
@@ -457,28 +457,36 @@ public class Renderer {
         // and boom we have screen coordinates
         // that scaling factor is arbitrary
 
-        if ( b < 0) {
+        if ( b > 0) {
 
             float fovVal = (((float) WIDTH / 2f) / (float) Math.tan(DEGREE * (fov / 2)));
             float ScreenX = (WIDTH / 2f) + (fovVal * a / b);
-            float ScreenY = (HEIGHT / 2f) - (fovVal * (spriteZ)  / b);
+            float ScreenY = (HEIGHT / 2f) - ( (fovVal * (spriteZ + floorHeight - activeCamera.getPositionZ()  ))  / b);
+
 
 
 
             int spritePXS = 2;
-            float spriteWorldSize = 300;
-            int spriteSize = (int) ( (spriteWorldSize * map.mapCellSize) / -b  ) ;
+            float spriteWorldSize = 50;
+            int spriteSize = (int) ( (spriteWorldSize * fovVal) / b  ) ;
 
             int startX = (int) ScreenX - spriteSize / 2;
             int endX = (int) ScreenX + spriteSize / 2;
+
+            // if the sprite is being rendered off-screen don't render
+            if (endX < 0){
+                return;
+            }
+
+
             // clamp the values so the loop doesn't go too far
             startX = Math.max(Math.min(startX,WIDTH),0) / spritePXS;
             endX = Math.max(Math.min(endX,WIDTH),0) / spritePXS;
 
 
 
-            int startY = (int) ScreenY - spriteSize / 2;
-            int endY = (int) ScreenY + spriteSize / 2;
+            int startY = (int) ScreenY - spriteSize;
+            int endY = (int) ScreenY;
             // clamp the values so the loop doesn't go too far
             startY = Math.max(Math.min(startY,HEIGHT),0) / spritePXS;
             endY = Math.max(Math.min(endY,HEIGHT),0) / spritePXS;
@@ -494,31 +502,34 @@ public class Renderer {
                 if (depthIndex > -1 && depthIndex < rayCount) {
                     zVal = depth[depthIndex];
                 }
-                float v = (((sx * spritePXS) - ScreenX) + (spriteSize / 2f)) / spriteSize;
 
-                // make sure sprite is actually renderable
+                float u = ( ( (float) (sx * spritePXS) - (int) ScreenX) ) / spriteSize;
+                u = Math.min(Math.max( u + 0.5f,0), 0.99f);
+
+
+
+                // make sure sprite isn't behind wall
                 if (b * -1 < zVal) {
 
 
                     for (int sy = startY ; sy <= endY  ; sy++)
                     {
                         if (sy > HEIGHT) {break;}
-                        float u = (((sy * spritePXS) - ScreenY) + (spriteSize / 2f)) / spriteSize;
 
-                        int pixel = (((int) ((u * 16) % 16) * 16 + ((int) (v * 16) % 16)) * 3);
 
-                        int cr =0, cg= 0, cb =0;
-                        /*
-                        if (pixel >= 0 && pixel < Textures.grassblock.length) {
-                            cr = Textures.stoneblock[pixel];
-                            cg = Textures.stoneblock[pixel + 1];
-                            cb = Textures.stoneblock[pixel + 2];
+                        float v = ( ( (float) (sy * spritePXS) - (int) ScreenY) ) / spriteSize;
+                        v = Math.min(Math.max( v + 1,0), 0.99f);
+
+                        int[] rgb = Textures.getRGB((int)(u * 64) , (int)(v * 64) );
+
+
+                        if(rgb[0] == 255 && rgb[1] == 0 && rgb[2] == 255)
+                        {
+                            continue;
                         }
 
-                         */
-
-
-                        setSquare((int) sx * spritePXS, (int) sy * spritePXS, spritePXS, spritePXS, cr, cg, cb);
+                        setSquare((int) sx * spritePXS, (int) sy * spritePXS, spritePXS, spritePXS, (int) (rgb[0]), (int) (rgb[1]), rgb[2]);
+                        //setSquare((int) sx * spritePXS, (int) sy * spritePXS, spritePXS, spritePXS, (int) (0), (int) (v * 255), 0);
                     }
                 }
             }

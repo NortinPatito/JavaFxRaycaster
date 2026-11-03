@@ -6,6 +6,9 @@ import java.util.Map;
 import java.util.ArrayList;
 
 import javafx.scene.input.KeyCode;
+import org.example.raycaster.Entities.Ball;
+import org.example.raycaster.Entities.Entity;
+import org.example.raycaster.Entities.SpriteEntity;
 
 public class Raycaster {
 
@@ -20,12 +23,15 @@ public class Raycaster {
     int HEIGHT = 512;
 
 
+    ArrayList<Entity> entities;
 
     // renderer class
 
     Renderer renderer;
 
     Camera playerCamera;
+
+    float bobber = 0;
 
 
     public Raycaster(){
@@ -45,10 +51,6 @@ public class Raycaster {
 
     // Logic Stuff
 
-    private float dist(float ax, float ay, float bx, float by){
-        return (float) Math.sqrt((bx - ax) * (bx - ax) + (by- ay) * (by - ay));
-    }
-
 
 
 
@@ -56,9 +58,11 @@ public class Raycaster {
 
         if(this.keys.getOrDefault(KeyCode.W,false)){
             playerCamera.MoveCameraForward(1f);
+            bobber += 0.01f;
         }
         if(this.keys.getOrDefault(KeyCode.S,false)){
             playerCamera.MoveCameraForward(-1f);
+            bobber -= 0.01f;
         }
         if(this.keys.getOrDefault(KeyCode.A,false)){
             //turnPlayer(-0.03f);
@@ -74,8 +78,36 @@ public class Raycaster {
         // cannot call any rendering logic here
         playerCamera = new Camera();
         renderer = new Renderer(playerCamera);
+        entities = new ArrayList<>();
+
+        entities.add(new Ball(200,200,40, playerCamera, renderer.map));
 
     }
+
+    // game update loop
+
+    public void update(float delta){
+        //  input here
+        playerInput();
+
+
+
+        // headbob
+
+        float sn = (float) Math.abs( Math.sin(bobber * 5));
+
+        playerCamera.setPositionZ((sn * 1.5f) + 20);
+
+
+        for (Entity e : entities)
+        {
+            e.update(delta);
+        }
+    }
+
+
+
+
 
 
     // Rendering Call
@@ -85,16 +117,19 @@ public class Raycaster {
 
 
 
-        //  input here
-        playerInput();
 
 
 
 
+        // Render Everything
         renderer.DrawFloor();
         renderer.DrawWalls();
 
-        renderer.drawSprite(60,60,0);
+
+        for (Entity e : entities)
+        {
+            e.render(renderer);
+        }
 
 
 

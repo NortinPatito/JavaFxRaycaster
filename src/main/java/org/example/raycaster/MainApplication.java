@@ -1,6 +1,7 @@
 package org.example.raycaster;
 
 import javafx.animation.Animation;
+import javafx.animation.AnimationTimer;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.application.Application;
@@ -26,7 +27,7 @@ public class MainApplication extends Application {
     int WIDTH = 800;
     int HEIGHT = 512;
 
-
+    private long lastTime = 0;
 
 
     Map<KeyCode, Boolean> keys = new HashMap<>();
@@ -65,9 +66,38 @@ public class MainApplication extends Application {
 
 
 
-        Timeline loop = new Timeline(new KeyFrame(Duration.millis(1000.0 / 120), e -> update(pixelWriter, pixelFormat, raycaster)));
-        loop.setCycleCount(Animation.INDEFINITE);
-        loop.play();
+        // MAIN GAME LOOP
+        // i hate how javafx does it
+        AnimationTimer loop = new AnimationTimer() {
+            @Override
+            public void handle(long currentTime) {
+                if (lastTime == 0) {
+                    lastTime = currentTime;
+                    return;
+                }
+
+                double deltaTime = (currentTime - lastTime) / 1_000_000_000.0;
+                lastTime = currentTime;
+
+
+
+                // update input
+                raycaster.updateInput(keys);
+
+                //
+
+                raycaster.update((float) deltaTime);
+
+
+                // render everything
+                int[] pixels = raycaster.render();
+                pixelWriter.setPixels(0, 0, WIDTH, HEIGHT, pixelFormat, pixels, 0, WIDTH);
+
+            }
+        };
+
+        loop.start();
+
 
         Scene scene = new Scene(pane, WIDTH, HEIGHT);
         stage.setTitle("Hello!");
@@ -75,13 +105,5 @@ public class MainApplication extends Application {
         stage.show();
     }
 
-    int t;
-    private void update(PixelWriter pixelWriter, PixelFormat pixelFormat, Raycaster raycaster){
-        raycaster.updateInput(keys);
-        int[] pixels = raycaster.render();
-        pixelWriter.setPixels(0, 0, WIDTH, HEIGHT, pixelFormat, pixels, 0, WIDTH);
-
-
-    }
 
 }

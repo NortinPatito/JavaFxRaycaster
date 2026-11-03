@@ -1,8 +1,8 @@
 package org.example.raycaster;
 
 public class Camera {
-    private float positionX;
-    private float positionY;
+    private float positionX = 100f;
+    private float positionY = 100f;
     private float positionZ = 20f;
 
     private float directionX;
@@ -44,6 +44,10 @@ public class Camera {
         calculateDirection();
     }
 
+    public void setPositionZ(float inZ){
+        this.positionZ = inZ;
+    }
+
 
     // ========== GETTERS ============
     public float getPositionX(){
@@ -57,6 +61,7 @@ public class Camera {
     public float getPositionZ(){
         return this.positionZ;
     }
+
 
 
     public float getAngle(){

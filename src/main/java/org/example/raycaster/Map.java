@@ -18,7 +18,7 @@ public class Map {
             1,0,0,0,0,0,0,0,0,0,0,1,
             1,0,0,0,0,0,0,0,0,0,0,1,
             9,0,0,0,0,2,0,0,0,0,0,9,
-            9,0,0,0,0,2,0,0,0,0,0,9,
+            9,0,0,0,0,2,0,0,4,4,0,9,
             9,0,0,0,0,2,0,0,0,0,0,9,
             9,0,0,0,0,0,0,0,0,3,3,1,
             9,0,0,0,0,0,0,0,0,3,3,1,
@@ -126,12 +126,17 @@ public class Map {
         float distance = 0;
         boolean side = false;
         // I use a limited render depth
-        // basically this controls how many more tiles it will check after finding the collision
-        // this could cause something like lets say a shorter wall behind a transparent fence to not show
-        //  the wall all the way at the end, but its good for performance
-        int maxRenderDepth = 3;
+        // basically after finding the first collision point
+        // this is how many more it will look for
+        // I limit this for performance
+        // it can cause rendering some things to not show up if their behind multiple
+        // walls or transparent objects but its worth for performance
+        int maxRenderDepth = 4;
 
         int renderDepth = 0;
+
+        float hitNormalX = 0;
+        float hitNormalY = 0;
 
         // the whole raycasting thing
         while(!foundEnd && distance < maxDist && renderDepth < maxRenderDepth)
@@ -146,12 +151,16 @@ public class Map {
                 distance = rayLengthX;
                 rayLengthX += stepSizeX;
                 side = true;
+                hitNormalX = stepX;
+                hitNormalY = 0;
             }else
             {
                 mapCheckY += stepY;
                 distance = rayLengthY;
                 rayLengthY += stepSizeY;
                 side = false;
+                hitNormalX = 0;
+                hitNormalY = stepY;
             }
 
             // check if tile is solid
@@ -160,9 +169,35 @@ public class Map {
 
                 int tileIndex = mapCheckY * mapX + mapCheckX;
                 if (map[tileIndex] >= 1 && tileIndex != lastHitTile) {
-                    float endX = inRayX + rayDirX * distance;
-                    float endY = inRayY + rayDirY * distance;
-                    RaycastResult result = new RaycastResult(endX, endY,distance, inRayA, side, mapCheckY * mapX + mapCheckX, true);
+                    float distAdd = 0;
+                    float dist = distance;
+
+
+                    // test for thin walls
+                    if ( map[tileIndex] == 9)
+                    {
+                        float xWall = ((float) mapCheckX + 0.5f) * mapCellSize;
+
+                        float t = (xWall - inRayX) / rayDirX;
+
+                        float tx = inRayX + rayDirX * t;
+                        float ty = inRayY + rayDirY * t;
+
+
+                         if( (int) (tx / mapCellSize) == mapCheckX && (int) (ty / mapCellSize ) == mapCheckY){
+                             RaycastResult result = new RaycastResult(tx, ty,t, inRayA, true, mapCheckY * mapX + mapCheckX, true, hitNormalX, hitNormalY);
+                             output.add(result);
+                             continue;
+                         }else{
+                             continue;
+                         }
+                    }
+
+                    float outDist = dist + distAdd;
+
+                    float endX = inRayX + rayDirX * outDist;
+                    float endY = inRayY + rayDirY * outDist;
+                    RaycastResult result = new RaycastResult(endX, endY,outDist, inRayA, side, mapCheckY * mapX + mapCheckX, true, hitNormalX, hitNormalY);
                     output.add(result);
                     lastHitTile = tileIndex;
                     renderDepth++;
