@@ -2,7 +2,7 @@ package org.example.raycaster;
 
 import java.util.ArrayList;
 
-public class Map {
+public class Level {
 
     // map sizing
     float mapCellSize = 100;
@@ -25,6 +25,10 @@ public class Map {
             1,1,1,1,1,1,1,1,1,1,1,1,
     };
 
+
+
+
+
     int[] ceilingMap = {
             1,1,1,1,1,1,1,1,1,1,1,1,
             1,1,1,1,1,1,1,1,1,1,1,1,
@@ -39,6 +43,12 @@ public class Map {
             1,0,0,0,0,0,0,0,0,0,0,1,
             1,1,1,1,1,1,1,1,1,1,1,1,
     };
+
+
+
+
+
+
 
     public int[] getMap(){
         return this.map;

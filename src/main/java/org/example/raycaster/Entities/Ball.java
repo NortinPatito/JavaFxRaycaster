@@ -11,7 +11,7 @@ public class Ball extends Entity{
     float velX = 0, velY = 0, velZ = 0;
 
     Camera player;
-    Map map;
+    Level level;
 
 
     // ==== ball config ========
@@ -19,7 +19,7 @@ public class Ball extends Entity{
 
     float ballRadius = 15f;
 
-    float kickForce = 2f;
+    float kickForce = 4f;
 
 
     // do once bools
@@ -35,13 +35,13 @@ public class Ball extends Entity{
 
     }
 
-    public Ball(float inX, float inY, float inZ, Camera inPlayer, Map inMap)
+    public Ball(float inX, float inY, float inZ, Camera inPlayer, Level inLevel)
     {
         setPositionX(inX);
         setPositionY(inY);
         setPositionZ(inZ);
         this.player = inPlayer;
-        this.map = inMap;
+        this.level = inLevel;
     }
 
     @Override
@@ -86,7 +86,7 @@ public class Ball extends Entity{
         float ang = (float) Math.atan2(dir[1],dir[0]);
 
 
-        ArrayList<RaycastResult> raycast = map.castRay(this.getPositionX(),this.getPositionY(), ang );
+        ArrayList<RaycastResult> raycast = level.castRay(this.getPositionX(),this.getPositionY(), ang );
         if(!raycast.isEmpty())
         {
             RaycastResult hit = raycast.getFirst();

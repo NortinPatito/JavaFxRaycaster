@@ -1,7 +1,5 @@
 package org.example.raycaster;
 
-import javafx.scene.input.KeyCode;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 
@@ -56,7 +54,7 @@ public class Renderer {
 
 
 
-    Map map = new Map();
+    Level level = new Level();
 
     // create a depth map for the screen
     float[] depth = new float[rayCount];
@@ -104,7 +102,7 @@ public class Renderer {
         for(int y=0; y < mapY; y++){
             for( int x=0; x < mapX; x++){
                 int r,g,b;
-                if( map.getTile(y * mapX + x) == 1) {
+                if( level.getTile(y * mapX + x) == 1) {
                     r = 255;
                     g = 255;
                     b = 0;
@@ -115,7 +113,7 @@ public class Renderer {
                 }
 
 
-                setSquare(x * (int) map.getMapCellSize() ,y * (int) map.getMapCellSize(), (int) map.getMapCellSize(), (int) map.getMapCellSize(),r,g,b);
+                setSquare(x * (int) level.getMapCellSize() ,y * (int) level.getMapCellSize(), (int) level.getMapCellSize(), (int) level.getMapCellSize(),r,g,b);
 
                 //setPixel(x,y,r,g,b);
             }
@@ -126,10 +124,10 @@ public class Renderer {
 
 
     private void draw2dPlayer(){
-        int squareSize = (int) map.getMapCellSize();
+        int squareSize = (int) level.getMapCellSize();
         int drawX = (int) (activeCamera.getPositionX());
         int drawY = (int) (activeCamera.getPositionY());
-        int playerSize = (int) map.getMapCellSize() / 2;
+        int playerSize = (int) level.getMapCellSize() / 2;
         setSquare(drawX - playerSize / 2 ,drawY - playerSize / 2, playerSize,playerSize,0,255,0);
 
 
@@ -168,7 +166,7 @@ public class Renderer {
             float rayAngle = activeCamera.getAngle() + (float) Math.atan(angleMult * (float) Math.tan((fov * DEGREE) / 2));
 
 
-            ArrayList<RaycastResult> rays = map.castRay(activeCamera.getPositionX(), activeCamera.getPositionY(), rayAngle);
+            ArrayList<RaycastResult> rays = level.castRay(activeCamera.getPositionX(), activeCamera.getPositionY(), rayAngle);
 
             for (RaycastResult ray : rays.reversed() ) {
                 if (!ray.didHit()) continue;
@@ -185,7 +183,7 @@ public class Renderer {
 
                 // grab tile value rq
 
-                int tileValue = map.getTile(ray.getTileIndex());
+                int tileValue = level.getTile(ray.getTileIndex());
 
 
 
@@ -235,12 +233,12 @@ public class Renderer {
                 float uvX = 0;
                 // calculate uvX
                 if (!ray.hitVerticle) {
-                    uvX = (ray.getRayX() / map.getMapCellSize()) % 1;
+                    uvX = (ray.getRayX() / level.getMapCellSize()) % 1;
                     if (ray.getRayAngle() < PI) {
                         uvX =  1- uvX;
                     }
                 } else {
-                    uvX = (ray.getRayY() / map.getMapCellSize()) % 1;
+                    uvX = (ray.getRayY() / level.getMapCellSize()) % 1;
                     if (ray.getRayAngle() > PI2 && ray.getRayAngle() < PI3) {
                         uvX = 1 - uvX;
                     }
@@ -342,7 +340,7 @@ public class Renderer {
             float rowDistance = (float) Math.abs((heightFactor  * d)  / ((y * floorRes) - ((float) HEIGHT / 2f)));
 
 
-            float mapCellSize = map.getMapCellSize();
+            float mapCellSize = level.getMapCellSize();
             float floorStepX = (rowDistance / mapCellSize) * (rayDirX1 - rayDirX0) / WIDTH;
             float floorStepY = (rowDistance / mapCellSize) * (rayDirY1 - rayDirY0) / WIDTH;
 
@@ -371,7 +369,7 @@ public class Renderer {
 
                 if(tileX >= 0 && tileX < mapX && tileY >= 0 && tileY < mapY){
 
-                    tileValue = map.getCeilingTile(tileY * mapX + tileX);
+                    tileValue = level.getCeilingTile(tileY * mapX + tileX);
                 }
 
                 floorX += floorStepX * floorRes;
@@ -509,7 +507,7 @@ public class Renderer {
 
 
                 // make sure sprite isn't behind wall
-                if (b * -1 < zVal) {
+                if (b < zVal) {
 
 
                     for (int sy = startY ; sy <= endY  ; sy++)

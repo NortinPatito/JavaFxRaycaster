@@ -47,6 +47,12 @@ public class Camera {
     public void setPositionZ(float inZ){
         this.positionZ = inZ;
     }
+    public void setPositionX(float inX){
+        this.positionX = inX;
+    }
+    public void setPositionY(float inY){
+        this.positionY = inY;
+    }
 
 
     // ========== GETTERS ============

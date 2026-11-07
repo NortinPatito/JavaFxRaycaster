@@ -28,6 +28,14 @@ public class MathHelper {
 
     }
 
+    public static float[] projectToNormal(float x, float y, float nX, float nY)
+    {
+        float mag = (float) Math.sqrt((x*x) + (y*y));
+
+        return new float[] {x / mag, y/ mag};
+
+    }
+
     public static float magnitude(float x, float y)
     {
         return (float) Math.sqrt((x*x) + (y*y));

@@ -1,14 +1,12 @@
 package org.example.raycaster;
 
-import java.util.Arrays;
-import java.util.HashMap;
 import java.util.Map;
 import java.util.ArrayList;
 
 import javafx.scene.input.KeyCode;
 import org.example.raycaster.Entities.Ball;
 import org.example.raycaster.Entities.Entity;
-import org.example.raycaster.Entities.SpriteEntity;
+import org.example.raycaster.Entities.Player;
 
 public class Raycaster {
 
@@ -30,6 +28,8 @@ public class Raycaster {
     Renderer renderer;
 
     Camera playerCamera;
+
+    Player player;
 
     float bobber = 0;
 
@@ -56,22 +56,6 @@ public class Raycaster {
 
     private void playerInput(){
 
-        if(this.keys.getOrDefault(KeyCode.W,false)){
-            playerCamera.MoveCameraForward(1f);
-            bobber += 0.01f;
-        }
-        if(this.keys.getOrDefault(KeyCode.S,false)){
-            playerCamera.MoveCameraForward(-1f);
-            bobber -= 0.01f;
-        }
-        if(this.keys.getOrDefault(KeyCode.A,false)){
-            //turnPlayer(-0.03f);
-            playerCamera.Turn(-0.03f);
-        }
-        if(this.keys.getOrDefault(KeyCode.D,false)){
-            //turnPlayer(0.03f);
-            playerCamera.Turn(0.03f);
-        }
     }
 
     public void begin(){
@@ -79,8 +63,12 @@ public class Raycaster {
         playerCamera = new Camera();
         renderer = new Renderer(playerCamera);
         entities = new ArrayList<>();
+        player = new Player(playerCamera, renderer.level);
 
-        entities.add(new Ball(200,200,40, playerCamera, renderer.map));
+        entities.add(new Ball(200,200,40, playerCamera, renderer.level));
+        entities.add(player);
+
+        MapLoader.loadMapFromFile("test");
 
     }
 
@@ -90,13 +78,9 @@ public class Raycaster {
         //  input here
         playerInput();
 
+        player.input(keys, delta);
 
 
-        // headbob
-
-        float sn = (float) Math.abs( Math.sin(bobber * 5));
-
-        playerCamera.setPositionZ((sn * 1.5f) + 20);
 
 
         for (Entity e : entities)
