@@ -68,7 +68,7 @@ public class Raycaster {
         entities.add(new Ball(200,200,40, playerCamera, renderer.level));
         entities.add(player);
 
-        MapLoader.loadMapFromFile("test");
+        LevelLoader.loadMapFromFile("test");
 
     }
 

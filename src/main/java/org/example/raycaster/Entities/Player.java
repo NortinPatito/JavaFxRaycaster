@@ -25,7 +25,7 @@ public class Player extends Entity{
     // movement config
     float groundAccel = 20;
     float maxGroundSpeed = 120;
-    float groundFriction = 6;
+    float groundFriction = 10;
 
     // turn config
     float turnSpeed = 5f;
@@ -35,6 +35,8 @@ public class Player extends Entity{
     public Player(Camera camera, Level inLevel){
         this.playerCamera = camera;
         this.level = inLevel;
+        setPositionX(200);
+        setPositionY(200);
     }
 
 

@@ -1,20 +1,12 @@
 package org.example.raycaster;
 
-import javafx.animation.Animation;
 import javafx.animation.AnimationTimer;
-import javafx.animation.KeyFrame;
-import javafx.animation.Timeline;
 import javafx.application.Application;
-import javafx.scene.Group;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.Scene;
-import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.image.*;
 import javafx.scene.layout.StackPane;
-import javafx.scene.paint.Color;
-import javafx.scene.text.Text;
 import javafx.stage.Stage;
-import javafx.util.Duration;
 import javafx.scene.input.KeyCode;
 
 import java.io.IOException;
@@ -51,8 +43,8 @@ public class MainApplication extends Application {
         SkyTextures skyTextures = new SkyTextures();
         skyTextures.loadTextures();
 
-        Textures textures = new Textures();
-        textures.loadTextures();
+        TextureHandler textureHandler = new TextureHandler();
+        textureHandler.loadTextures();
 
 
         // setup input

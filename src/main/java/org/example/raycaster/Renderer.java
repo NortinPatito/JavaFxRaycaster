@@ -30,8 +30,6 @@ public class Renderer {
 
     // predefined map variables
 
-    int mapX = 12;
-    int mapY = 12;
 
 
     /*
@@ -54,7 +52,7 @@ public class Renderer {
 
 
 
-    Level level = new Level();
+    Level level = LevelLoader.loadMapFromFile("test");
 
     // create a depth map for the screen
     float[] depth = new float[rayCount];
@@ -99,10 +97,10 @@ public class Renderer {
 
 
 
-        for(int y=0; y < mapY; y++){
-            for( int x=0; x < mapX; x++){
+        for(int y=0; y < level.getMapX(); y++){
+            for( int x=0; x < level.getMapX(); x++){
                 int r,g,b;
-                if( level.getTile(y * mapX + x) == 1) {
+                if( level.getTile(y * level.getMapX() + x) == 1) {
                     r = 255;
                     g = 255;
                     b = 0;
@@ -159,6 +157,8 @@ public class Renderer {
 
     public void DrawWalls(){
 
+        if (level == null) {return;}
+
         int pixelSizeX = WIDTH / rayCount;
         for (int i = 0; i < rayCount; i++) {
 
@@ -169,7 +169,10 @@ public class Renderer {
             ArrayList<RaycastResult> rays = level.castRay(activeCamera.getPositionX(), activeCamera.getPositionY(), rayAngle);
 
             for (RaycastResult ray : rays.reversed() ) {
-                if (!ray.didHit()) continue;
+                if (!ray.didHit()) {
+                    depth[i] = 1000000f;
+                    continue;
+                }
 
                 // get angle from player to ray
                 float ca = MathHelper.getSafeAngle(activeCamera.getAngle()) - ray.getRayAngle();
@@ -179,11 +182,13 @@ public class Renderer {
 
                 // store depth values in array for sprites
 
-                depth[i] = ray.getHitDist();
+                depth[i] = Math.abs(ray.getHitDist());
 
                 // grab tile value rq
 
                 int tileValue = level.getTile(ray.getTileIndex());
+
+                TileData tileData = level.getTileData(tileValue);
 
 
 
@@ -267,11 +272,7 @@ public class Renderer {
 
 
 
-                    int pixelX = (int) (((uvX) * 32f) % 32) ;
-                    int pixelY = (int) ((uvY * 32f) % 32);
-
-
-                    int[] rgb = Textures.getWallRGB(pixelX,pixelY, tileValue - 1);
+                    int[] rgb = TextureHandler.wallTexture.getSectionRGB(uvX,uvY, tileData.getTextureIndex());
 
 
 
@@ -297,6 +298,8 @@ public class Renderer {
                     }
                 }
 
+
+
             }
         }
 
@@ -307,6 +310,10 @@ public class Renderer {
 
 
     public void DrawFloor(){
+
+        if (level == null) {return;}
+
+
         // draw floors and ceiling
 
         // this was painfull
@@ -360,20 +367,32 @@ public class Renderer {
                 int cellY = (int)(floorY);
 
                 // get the texture coordinate from the fractional part
-                int tx = (int)(32 * (floorX - cellX) ) & (32 - 1);
-                int ty = (int)(32 * (floorY - cellY)) & (32 - 1);
+                float u = (float)( (floorX - cellX) ) % 1;
+                float v = (float)( (floorY - cellY)) % 1;
 
-                int tileX = (int) floorX;
-                int tileY = (int) floorY;
-                int tileValue = 0;
 
-                if(tileX >= 0 && tileX < mapX && tileY >= 0 && tileY < mapY){
 
-                    tileValue = level.getCeilingTile(tileY * mapX + tileX);
+                int tileX = (int)  Math.abs(floorX);
+                int tileY = (int) Math.abs(floorY);
+                int tileValue = 1;
+
+                if ( tileX >= 0 && tileX < level.getMapX() && tileY >= 0 && tileY < level.getMapX()  ) {
+                    if (!isFloor) {
+
+                        tileValue = level.getCeilingTile(tileY * level.getMapX() + tileX);
+                    } else {
+                        tileValue = level.getFloorTile(tileY * level.getMapX() + tileX);
+                    }
                 }
 
                 floorX += floorStepX * floorRes;
                 floorY += floorStepY * floorRes;
+
+                if(!isFloor) {
+                    if (tileX < 0 || tileX > level.getMapX() || tileY < 0 || tileY > level.getMapX()) {
+                        tileValue = -1;
+                    }
+                }
 
 
 
@@ -383,11 +402,9 @@ public class Renderer {
 
 
 
-                float shader = 0;
                 int depthMapVlaue = (int) (y * (WIDTH / floorRes) + x);
                 if (tileValue > 0 && !isFloor) {
                     ceilingMask[depthMapVlaue] = true;
-                    shader = 1;
                 } else {
                     ceilingMask[depthMapVlaue] = false;
 
@@ -397,12 +414,9 @@ public class Renderer {
 
 
 
-                if( tileValue > 0 || isFloor) {
+                if( tileValue >= 0 || isFloor) {
 
-                    int pixelX = (int) (tx % 32);
-                    int pixelY = (int) (ty % 32);
-
-                    int[] rgb = Textures.getWallRGB(pixelX,pixelY, tileValue - 1);
+                    int[] rgb = TextureHandler.wallTexture.getSectionRGB(u,v, tileValue);
 
 
                     setSquare(x * floorRes, y * floorRes, floorRes, floorRes, (int) ( rgb[0]) , (int) (rgb[1]), (int) (rgb[2]));
@@ -435,6 +449,9 @@ public class Renderer {
 
 
     public void drawSprite(float x, float y, float z){
+
+        if (level == null) {return;}
+
         float spriteX = x - activeCamera.getPositionX();
         float spriteY = y - activeCamera.getPositionY();
         float spriteZ = z;
@@ -518,7 +535,7 @@ public class Renderer {
                         float v = ( ( (float) (sy * spritePXS) - (int) ScreenY) ) / spriteSize;
                         v = Math.min(Math.max( v + 1,0), 0.99f);
 
-                        int[] rgb = Textures.getRGB((int)(u * 64) , (int)(v * 64) );
+                        int[] rgb = TextureHandler.getRGB((int)(u * 64) , (int)(v * 64) );
 
 
                         if(rgb[0] == 255 && rgb[1] == 0 && rgb[2] == 255)

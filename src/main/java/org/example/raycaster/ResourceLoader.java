@@ -14,7 +14,7 @@ import java.util.List;
 
 public class ResourceLoader {
 
-    public static int[]  loadTexture(String file) {
+    public static int[]  loadTextureInt(String file) {
         String resourcePath = file;
 
         try (InputStream is = ResourceLoader.class.getResourceAsStream(resourcePath)) {

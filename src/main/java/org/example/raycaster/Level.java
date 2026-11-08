@@ -1,6 +1,7 @@
 package org.example.raycaster;
 
 import java.util.ArrayList;
+import java.util.Map;
 
 public class Level {
 
@@ -9,49 +10,38 @@ public class Level {
 
     // map definition
     int mapX = 12;
-    int mapY = 12;
-    int[] map = {
-            1,1,1,1,1,1,1,1,1,1,1,1,
-            1,0,0,1,0,0,0,0,0,0,0,1,
-            1,0,0,1,0,0,0,0,0,0,0,1,
-            1,0,0,1,1,1,1,3,3,0,0,1,
-            1,0,0,0,0,0,0,0,0,0,0,1,
-            1,0,0,0,0,0,0,0,0,0,0,1,
-            9,0,0,0,0,2,0,0,0,0,0,9,
-            9,0,0,0,0,2,0,0,4,4,0,9,
-            9,0,0,0,0,2,0,0,0,0,0,9,
-            9,0,0,0,0,0,0,0,0,3,3,1,
-            9,0,0,0,0,0,0,0,0,3,3,1,
-            1,1,1,1,1,1,1,1,1,1,1,1,
-    };
+    int[] map = {};
+    int[] mapFloors = {};
+    int[] mapCeilings = {};
+    Map<Integer, TileData> tiles;
 
 
 
-
-
-    int[] ceilingMap = {
-            1,1,1,1,1,1,1,1,1,1,1,1,
-            1,1,1,1,1,1,1,1,1,1,1,1,
-            1,1,1,1,1,1,1,1,1,1,1,1,
-            1,1,1,1,1,1,1,1,1,1,1,1,
-            1,1,1,1,1,1,1,1,1,1,1,1,
-            1,1,1,1,1,1,1,1,1,1,1,1,
-            1,0,0,0,0,0,0,0,0,0,0,1,
-            1,0,0,0,0,0,0,0,0,0,0,1,
-            1,0,0,0,0,0,0,0,0,0,0,1,
-            1,0,0,0,0,0,0,0,0,0,0,1,
-            1,0,0,0,0,0,0,0,0,0,0,1,
-            1,1,1,1,1,1,1,1,1,1,1,1,
-    };
-
-
-
+    public Level(int inMapSize, int[] inMap, int[] inFloors, int[] inCeilings, Map<Integer, TileData> inTiles){
+        this.mapX = inMapSize;
+        this.map = inMap;
+        this.mapFloors = inFloors;
+        this.mapCeilings = inCeilings;
+        this.tiles = inTiles;
+    }
 
 
 
 
     public int[] getMap(){
         return this.map;
+    }
+
+    public int[] getMapFloors(){
+        return this.mapFloors;
+    }
+
+    public int[] getMapCeilings(){
+        return this.mapCeilings;
+    }
+
+    public Map<Integer, TileData> getTiles(){
+        return this.tiles;
     }
 
     public int getTile(int index){
@@ -63,9 +53,17 @@ public class Level {
     }
 
     public int getCeilingTile(int index){
-        if (index > 0 && index < ceilingMap.length)
+        if (index > 0 && index < mapCeilings.length)
         {
-            return ceilingMap[index];
+            return mapCeilings[index];
+        }
+        return -1;
+    }
+
+    public int getFloorTile(int index){
+        if (index > 0 && index < mapFloors.length)
+        {
+            return mapFloors[index];
         }
         return 0;
     }
@@ -76,6 +74,21 @@ public class Level {
 
 
 
+    public int getMapX(){
+        return this.mapX;
+    }
+
+
+    public TileData getTileData(int inTile){
+        if(tiles.containsKey(inTile))
+        {
+            return tiles.get(inTile);
+        }
+
+        return null;
+    }
+
+    // ======================== COLLISION TESTING =====================
     // dda implementation of casting a ray
     // more efficient algorithm than the first iteration i wrote
     // first one i wrote was poop
@@ -174,11 +187,11 @@ public class Level {
             }
 
             // check if tile is solid
-            if( mapCheckX >= 0 && mapCheckX < mapX && mapCheckY >= 0 && mapCheckY < mapY) {
+            if( mapCheckX >= 0 && mapCheckX < mapX && mapCheckY >= 0 && mapCheckY < mapX) {
 
 
                 int tileIndex = mapCheckY * mapX + mapCheckX;
-                if (map[tileIndex] >= 1 && tileIndex != lastHitTile) {
+                if (map[tileIndex] >= 0 && tileIndex != lastHitTile) {
                     float distAdd = 0;
                     float dist = distance;
 

@@ -1,27 +1,23 @@
 package org.example.raycaster.MapEditor;
 
 import javafx.application.Application;
+import javafx.event.ActionEvent;
 import javafx.scene.Scene;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
-import javafx.scene.control.ScrollPane;
-import javafx.scene.control.TextField;
+import javafx.scene.control.*;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
-import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
-import javafx.scene.shape.Box;
 import javafx.stage.Stage;
-import org.example.raycaster.MapLoader;
+import org.example.raycaster.Level;
+import org.example.raycaster.LevelLoader;
 import org.example.raycaster.TileData;
 
 import java.io.IOException;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
@@ -38,15 +34,26 @@ public class MapEditor extends Application {
 
     VBox tileDataList;
 
+    HBox editModeBox;
+
     // Level Data
 
     int[] level;
+    int[] levelFloors;
+    int[] levelCeiling;
     int mapWidth = 12;
     Map<Integer, TileData> tileData = new HashMap<>();
+
 
     // ==== editor params ====
 
     int selectedTile = -1;
+
+    int editMode = 0;
+
+    int selectedExtraIndex = 0;
+
+    boolean showWallGhost = true;
 
     Color[] indexColors = new Color[]{ Color.RED, Color.BLUE, Color.GREEN, Color.PURPLE,Color.CYAN, Color.YELLOW, Color.BURLYWOOD, Color.AZURE, Color.PINK, Color.CORNSILK, Color.INDIGO, Color.GAINSBORO};
 
@@ -74,10 +81,10 @@ public class MapEditor extends Application {
         TextField mapName = new TextField("");
 
         save.setOnAction(e -> saveMapFile(mapName.getText()));
+        load.setOnAction(e -> loadMapFile(mapName.getText()));
 
         HBox toolbar = new HBox(save,load, mapNameLabel, mapName);
 
-        content.getChildren().add(toolbar);
 
 
         HBox mainEditor = new HBox();
@@ -90,7 +97,7 @@ public class MapEditor extends Application {
         levelDisplay.setOnMousePressed(e -> OnMapMouse(e));
 
 
-        // ========== Tile and ent Editor ===========
+        // ========== Tile Editor ===========
 
         VBox editor = new VBox();
         HBox.setHgrow(editor, Priority.ALWAYS);
@@ -118,18 +125,31 @@ public class MapEditor extends Application {
         // tile data editing buttons
 
         Label tileDataLabel = new Label("--Tile Data--");
+        Label tileDataLabelExtra = new Label("* must hit enter");
 
         tileDataList = new VBox();
 
 
 
-        editor.getChildren().addAll(tilesLabel,scrollPane,tileButtons,tileDataLabel, tileDataList);
-
-
-
+        editor.getChildren().addAll(tilesLabel,scrollPane,tileButtons,tileDataLabel, tileDataLabelExtra, tileDataList);
         mainEditor.getChildren().addAll(editor,levelDisplay);
 
-        content.getChildren().add(mainEditor);
+        // ========== Toolbar for ceiling and floor editing ============
+
+        editModeBox = new HBox();
+
+        refreshEditModeDisplay();
+
+        CheckBox wallGhostCheck = new CheckBox("Show Wall Ghost");
+
+        Label textureLabelCeil = new Label("Texture Index: ");
+        TextField ceilingTextureField = new TextField("0");
+        ceilingTextureField.setOnAction(e -> onFloorIndexChanged(ceilingTextureField));
+        HBox textBox = new HBox(textureLabelCeil,ceilingTextureField);
+
+
+        // add the finale ui elements
+        content.getChildren().addAll(toolbar,mainEditor, editModeBox,textBox, wallGhostCheck);
 
 
 
@@ -177,21 +197,45 @@ public class MapEditor extends Application {
             int y = (int) j / mapWidth;
             int tileIndex = level[j];
 
-            if ( tileIndex < 0) { continue; }
-
             TileData data = tileData.get(tileIndex);
 
             double cX = (double) x / mapWidth * levelDisplay.getWidth();
             double cY = (double) y / mapWidth * levelDisplay.getHeight();
-
-
-
             double sX = (width / mapWidth);
             double sY = (width / mapWidth);
 
             int colorIndex = Math.min(tileIndex, indexColors.length - 1);
-            gc.setFill(indexColors[colorIndex]);
-            gc.fillRect(cX ,cY , sX,sY);
+            if ( tileIndex >= 0) {
+                Color oldColor = Color.hsb(colorIndex * 137.508, 0.4, 0.95);
+                if (editMode == 0) {
+                    gc.setFill(oldColor);
+                    gc.fillRect(cX, cY, sX, sY);
+                } else if (showWallGhost) {
+                    Color newColor = new Color(oldColor.getRed(), oldColor.getGreen(), oldColor.getBlue(), 0.25);
+                    gc.setFill(newColor);
+                    gc.fillRect(cX, cY, sX, sY);
+                }
+            }
+
+
+            // draw other maps for edit mode
+            switch (editMode)
+            {
+                case 1:
+                    int floorindex = Math.min(levelFloors[j], indexColors.length - 1);
+                    if ( floorindex >= 0) {
+                        gc.setFill(Color.hsb(floorindex * 137.508, 0.4, 0.95));
+                        gc.fillRect(cX, cY, sX, sY);
+                        break;
+                    }
+                case 2:
+                    int ceilingIndex = Math.min(levelCeiling[j], indexColors.length - 1);
+                    if ( ceilingIndex >= 0) {
+                        gc.setFill(Color.hsb(ceilingIndex * 137.508, 0.4, 0.95));
+                        gc.fillRect(cX, cY, sX, sY);
+                        break;
+                    }
+            }
 
         }
 
@@ -242,6 +286,36 @@ public class MapEditor extends Application {
         }
     }
 
+
+    private void refreshEditModeDisplay(){
+        editModeBox.getChildren().clear();
+
+        CheckBox wallModeButton = new CheckBox("Edit Walls");
+        CheckBox floorModeButton = new CheckBox("Edit Floors");
+        CheckBox ceilingModeButton = new CheckBox("Edit Ceilings");
+        wallModeButton.setOnAction(e -> editModeChecked(wallModeButton, 0));
+        floorModeButton.setOnAction(e -> editModeChecked(floorModeButton, 1));
+        ceilingModeButton.setOnAction(e -> editModeChecked(ceilingModeButton, 2));
+
+        switch (editMode)
+        {
+            case 0:
+                wallModeButton.setSelected(true);
+                break;
+            case 1:
+                floorModeButton.setSelected(true);
+                break;
+            case 2:
+                ceilingModeButton.setSelected(true);
+                break;
+        }
+
+        editModeBox.getChildren().addAll(wallModeButton,floorModeButton,ceilingModeButton);
+
+    }
+
+
+
     // ====== input logic ============
 
 
@@ -253,7 +327,12 @@ public class MapEditor extends Application {
         if (event.getButton() == MouseButton.PRIMARY ){
             // on clicking and moving
 
-            setTile(tX,tY, selectedTile);
+
+            if(editMode == 0) {
+                setTile(tX, tY, selectedTile);
+            }else {
+                setTile(tX, tY, selectedExtraIndex);
+            }
 
         }
 
@@ -267,6 +346,25 @@ public class MapEditor extends Application {
 
     }
 
+    private void editModeChecked(CheckBox box, int newMode){
+        if (box.isSelected())
+        {
+            updateEditMode(newMode);
+        }else {
+            refreshEditModeDisplay();
+        }
+    }
+
+    private void onFloorIndexChanged(TextField field){
+        String value = field.getText();
+        if ( LevelLoader.isInt(value))
+        {
+            selectedExtraIndex = Integer.parseInt(value);
+        }else{
+            field.setText(String.format("%d", selectedExtraIndex));
+        }
+    }
+
 
 
 
@@ -274,8 +372,12 @@ public class MapEditor extends Application {
 
     private void createNewLevel(){
         level = new int[mapWidth * mapWidth];
+        levelFloors = new int[mapWidth * mapWidth];
+        levelCeiling = new int[mapWidth * mapWidth];
 
         Arrays.fill(level, -1);
+        Arrays.fill(levelFloors, 0);
+        Arrays.fill(levelCeiling, -1);
 
 
         drawLevel();
@@ -288,7 +390,18 @@ public class MapEditor extends Application {
         int index = tileY * mapWidth + tileX;
         if(index >= 0 && index < level.length)
         {
-            level[index] = tileType;
+            switch (editMode)
+            {
+                case 0:
+                    level[index] = tileType;
+                    break;
+                case 1:
+                    levelFloors[index] = Math.max(tileType,0 );
+                    break;
+                case 2:
+                    levelCeiling[index] = tileType;
+                    break;
+            }
 
         }
         drawLevel();
@@ -348,12 +461,46 @@ public class MapEditor extends Application {
 
 
 
+    private void updateEditMode(int newMode)
+    {
+        editMode = newMode;
+        refreshEditModeDisplay();
+        drawLevel();
+
+    }
+
 
     // ============= Save and load ============
     private void saveMapFile(String name){
-        MapLoader.saveMapToFile(name,level, tileData);
-        System.out.println("Saved");
+
+        boolean didSave = LevelLoader.saveMapToFile(name,level, levelFloors,levelCeiling, tileData);
+
+        Alert alert = new Alert(Alert.AlertType.INFORMATION);
+        alert.setTitle("File Saving:");
+        if(didSave) {
+            alert.setHeaderText("File Saved Successfully");
+            alert.setContentText("your file was saved");
+        }else{
+            alert.setHeaderText("There was an error saving your file");
+            alert.setContentText("please try again");
+        }
+        alert.showAndWait();
+
     }
+
+    private void loadMapFile(String name){
+        Level loadedLevel = LevelLoader.loadMapFromFile(name);
+        level = loadedLevel.getMap();
+        levelFloors = loadedLevel.getMapFloors();
+        levelCeiling = loadedLevel.getMapCeilings();
+        tileData = loadedLevel.getTiles();
+
+
+        drawLevel();
+        refreshTileButtons();
+
+    }
+
 
 
 

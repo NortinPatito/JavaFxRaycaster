@@ -55,7 +55,4 @@ public class RaycastResult {
         return this.didHit;
     }
 
-    public void setHitDist(float newDist){
-        this.hitDist = newDist;
-    }
 }

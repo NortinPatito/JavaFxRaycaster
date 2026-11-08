@@ -3,12 +3,14 @@ package org.example.raycaster;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-public class MapLoader {
+public class LevelLoader {
+
+
+
 
 
     // ================ load from file ===========
@@ -19,7 +21,9 @@ public class MapLoader {
             List<String> lines = content.lines().toList();
             System.out.println("Loaded File");
 
-            int[] tileMap = new int[16 * 16];
+            int[] tileMap = new int[12 * 12];
+            int[] floorMap = new int[12 * 12];
+            int[] ceilingMap = new int[12 * 12];
             Map<Integer,TileData> tileData = new HashMap<>();
 
             for(String line : lines)
@@ -31,6 +35,16 @@ public class MapLoader {
                     parseTileArray(chunk[1], tileMap);
                 }
 
+                if(chunk[0].startsWith("floor"))
+                {
+                    parseTileArray(chunk[1], floorMap);
+                }
+
+                if(chunk[0].startsWith("ceiling"))
+                {
+                    parseTileArray(chunk[1], ceilingMap);
+                }
+
                 if(chunk[0].startsWith("tile"))
                 {
                     parseTile(chunk[1], tileData);
@@ -38,6 +52,8 @@ public class MapLoader {
 
 
             }
+
+            return new Level(12, tileMap,floorMap,ceilingMap, tileData);
 
         } catch (IOException e) {
             e.printStackTrace();
@@ -59,14 +75,10 @@ public class MapLoader {
         {
             if(number.equals(" ")) { continue;}
 
-            if(i < outArray.length){
-                try{
+
+            if(i < outArray.length && isInt(number)){
                 outArray[i] = Integer.parseInt(number);
-                System.out.println(outArray[i]);
                 i++;
-                } catch (NumberFormatException e) {
-                    continue;
-                }
             }
         }
     }
@@ -80,35 +92,52 @@ public class MapLoader {
         TileData data = new TileData();
 
         int i = 0;
-        for ( String number : numbers)
+        for ( String value : numbers)
         {
-            if(number.equals(" ")) { continue;}
+            if(value.equals(" ")) { continue;}
 
-            try{
-                int value = Integer.parseInt(number);
-                switch (i){
-                    case 0:
-                        index = value;
-                        break;
-                    case 1:
-                        data.setTextureIndex(value);
-                        break;
-                }
-                i++;
-            } catch (NumberFormatException e) {
-                continue;
+            int intValue = 0;
+
+            if(isInt(value)) {
+                intValue = Integer.parseInt(value);
             }
-        }
 
+            switch (i){
+                case 0:
+                    data.setName(value);
+                    break;
+                case 1:
+                    index = intValue;
+                    break;
+                case 2:
+                    data.setTextureIndex(intValue);
+                    break;
+            }
+            i++;
+        }
         dataMap.put(index,data);
     }
 
+
+    public static boolean isInt(String str){
+        if ( str == null || str.isEmpty() )
+        {
+            return false;
+        }
+
+        try {
+            Integer.parseInt(str);
+            return true;
+        } catch (NumberFormatException e) {
+            return false;
+        }
+    }
 
 
 
     // ========== Save to file ==============
 
-    public static void saveMapToFile(String mapName, int[] tiles, Map<Integer, TileData> tileData)
+    public static boolean saveMapToFile(String mapName, int[] tiles, int[] floors, int[] ceilings, Map<Integer, TileData> tileData)
     {
         String mapData = "level:";
 
@@ -118,12 +147,23 @@ public class MapLoader {
             mapData += String.format(",%d", tile);
         }
 
+        mapData += String.format("%nfloor:");
+        for(int floor : floors)
+        {
+            mapData += String.format(",%d", floor);
+        }
+
+        mapData += String.format("%nceiling:");
+        for(int ceiling : ceilings)
+        {
+            mapData += String.format(",%d", ceiling);
+        }
 
 
         for(int key : tileData.keySet())
         {
             TileData data = tileData.get(key);
-            mapData += String.format("%ntile:%d,%d",key,data.getTextureIndex());
+            mapData += String.format("%ntile:%s,%d,%d",data.getName(),key,data.getTextureIndex());
         }
 
 
@@ -131,9 +171,9 @@ public class MapLoader {
         try {
             // Overwrites the file if it exists, or creates a new one
             Files.writeString(Path.of(mapName+ ".shmoe"), mapData);
-            System.out.println("File saved successfully to: ");
+            return true;
         } catch (IOException e) {
-            e.printStackTrace();
+            return false;
         }
     }
 }
