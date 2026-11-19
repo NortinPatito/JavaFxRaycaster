@@ -15,6 +15,7 @@ import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 import org.example.raycaster.Level;
 import org.example.raycaster.LevelLoader;
+import org.example.raycaster.MathHelper;
 import org.example.raycaster.TileData;
 
 import java.io.IOException;
@@ -41,7 +42,7 @@ public class MapEditor extends Application {
     int[] level;
     int[] levelFloors;
     int[] levelCeiling;
-    int mapWidth = 12;
+    int mapWidth = 32;
     Map<Integer, TileData> tileData = new HashMap<>();
 
 
@@ -127,11 +128,20 @@ public class MapEditor extends Application {
         Label tileDataLabel = new Label("--Tile Data--");
         Label tileDataLabelExtra = new Label("* must hit enter");
 
+
         tileDataList = new VBox();
 
 
+        ScrollPane dataPane = new ScrollPane();
+        dataPane.setContent(tileDataList);
+        dataPane.setFitToHeight(true);
+        dataPane.setPannable(true);
+        dataPane.setMaxHeight(150);
+        dataPane.setMinHeight(150);
+        dataPane.setFitToWidth(false);
 
-        editor.getChildren().addAll(tilesLabel,scrollPane,tileButtons,tileDataLabel, tileDataLabelExtra, tileDataList);
+
+        editor.getChildren().addAll(tilesLabel,scrollPane,tileButtons,tileDataLabel, tileDataLabelExtra, dataPane);
         mainEditor.getChildren().addAll(editor,levelDisplay);
 
         // ========== Toolbar for ceiling and floor editing ============
@@ -281,8 +291,12 @@ public class MapEditor extends Application {
             TextField textureIndexField = new TextField(String.format("%d", data.getTextureIndex()));
             textureIndexField.setOnAction(e -> updateSelectTexture(Integer.parseInt(textureIndexField.getText())));
 
+            Label heightLabel = new Label("Height Multiplyer: ");
+            TextField heightField = new TextField(String.format("%.2f", data.getWallHeight()));
+            heightField.setOnAction(e -> updateSelectHeight(heightField.getText()));
 
-            tileDataList.getChildren().addAll(nameLabel,tileNameField, textureLabel,textureIndexField);
+
+            tileDataList.getChildren().addAll(nameLabel,tileNameField, textureLabel,textureIndexField,heightLabel,heightField);
         }
     }
 
@@ -458,6 +472,15 @@ public class MapEditor extends Application {
             tileData.get(selectedTile).setTextureIndex(newId);
         }
     }
+
+    private void updateSelectHeight(String newHeight){
+        if(MathHelper.IsFloat(newHeight)){
+            float height = Float.parseFloat(newHeight);
+            tileData.get(selectedTile).setWallHeight(height);
+        }
+        refreshTileDataList();
+    }
+
 
 
 

@@ -32,6 +32,9 @@ public class Player extends Entity{
 
     int moveDirection = 0;
 
+
+    float heabob = 0f;
+
     public Player(Camera camera, Level inLevel){
         this.playerCamera = camera;
         this.level = inLevel;
@@ -63,9 +66,10 @@ public class Player extends Entity{
 
 
         // headbob
-        float sn = (float) Math.abs( Math.sin(0f * 5));
-
-        playerCamera.setPositionZ((sn * 1.5f) + 20);
+        heabob += MathHelper.magnitude(velX,velY) * delta;
+        //heabob += delta * 2;
+        float sn = (float) Math.abs( Math.sin(heabob * 7.5f));
+        playerCamera.setPositionZ((sn * 2.5f) + 20);
 
 
         setPositionX(getPositionX() + (velX ));
@@ -121,7 +125,7 @@ public class Player extends Entity{
 
     private void friction(float delta){
         float speed = MathHelper.magnitude(velX,velY);
-        if(speed > 0.001f)
+        if(speed > 0f)
         {
 
 

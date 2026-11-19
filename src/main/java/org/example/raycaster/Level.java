@@ -6,7 +6,7 @@ import java.util.Map;
 public class Level {
 
     // map sizing
-    float mapCellSize = 100;
+    float mapCellSize = 50;
 
     // map definition
     int mapX = 12;
@@ -145,7 +145,7 @@ public class Level {
 
         // Da loop
         boolean foundEnd = false;
-        float maxDist = 1000; // Arbitrary value, just make it high
+        float maxDist = 3000; // Arbitrary value, just make it high
         float distance = 0;
         boolean side = false;
         // I use a limited render depth
@@ -154,13 +154,15 @@ public class Level {
         // I limit this for performance
         // it can cause rendering some things to not show up if their behind multiple
         // walls or transparent objects but its worth for performance
-        int maxRenderDepth = 4;
+        int maxRenderDepth = 24;
 
         int renderDepth = 0;
 
         float hitNormalX = 0;
         float hitNormalY = 0;
 
+
+        int lastTileVale = -5;
         // the whole raycasting thing
         while(!foundEnd && distance < maxDist && renderDepth < maxRenderDepth)
         {
@@ -191,12 +193,13 @@ public class Level {
 
 
                 int tileIndex = mapCheckY * mapX + mapCheckX;
-                if (map[tileIndex] >= 0 && tileIndex != lastHitTile) {
+                if (map[tileIndex] >= 0 && tileIndex != lastHitTile && map[tileIndex] != lastTileVale) {
                     float distAdd = 0;
                     float dist = distance;
-
+                    lastTileVale = map[tileIndex];
 
                     // test for thin walls
+                    /*
                     if ( map[tileIndex] == 9)
                     {
                         float xWall = ((float) mapCheckX + 0.5f) * mapCellSize;
@@ -215,6 +218,8 @@ public class Level {
                              continue;
                          }
                     }
+
+                     */
 
                     float outDist = dist + distAdd;
 

@@ -33,4 +33,24 @@ public class Texture {
         }
         return new int[]{0,0,0};
     }
+
+    public int[] getSectionsRGB(float u, float v, int startIndX,int startIndY,int endIndX,int endIndY)
+    {
+
+
+        int fixedUvX =(int) ((startIndX + (u * (endIndX - startIndX))) * sectionRes);
+        int fixedUvY = (int) ((startIndY + (v * (endIndY - startIndY))) * sectionRes);
+
+        int index = ((fixedUvY) * size + fixedUvX);
+
+        if (index < textureData.length && index >= 0){
+            int value = textureData[index];
+            int r = (value >> 16) & 255;
+            int g = (value >> 8) & 255;
+            int b = value & 255;
+            return new int[]{r,g,b};
+        }
+        return new int[]{0,0,0};
+    }
+
 }

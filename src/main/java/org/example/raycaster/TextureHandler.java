@@ -4,14 +4,18 @@ public class TextureHandler {
     public void loadTextures() {
 
 
-        wallTexture = new Texture(ResourceLoader.loadTextureInt("/wallTextures.ppm"),8);
+        wallTexture = new Texture(ResourceLoader.loadTextureInt("/walltextures.ppm"),8);
         treeSprite = ResourceLoader.loadTextureInt("/tree.ppm");
+        sprites = new Texture(ResourceLoader.loadTextureInt("/sprites.ppm"),8);
+        testEnemy = new Texture(ResourceLoader.loadTextureInt("/testenemy.ppm"),8);
     }
 
 
     public static int[] treeSprite;
 
     public static Texture wallTexture;
+    public static Texture sprites;
+    public static Texture testEnemy;
 
 
     public static int[] getRGB(int pixelX, int pixelY){

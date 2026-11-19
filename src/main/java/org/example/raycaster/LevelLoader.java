@@ -21,9 +21,9 @@ public class LevelLoader {
             List<String> lines = content.lines().toList();
             System.out.println("Loaded File");
 
-            int[] tileMap = new int[12 * 12];
-            int[] floorMap = new int[12 * 12];
-            int[] ceilingMap = new int[12 * 12];
+            int[] tileMap = new int[32 * 32];
+            int[] floorMap = new int[32 * 32];
+            int[] ceilingMap = new int[32 * 32];
             Map<Integer,TileData> tileData = new HashMap<>();
 
             for(String line : lines)
@@ -53,7 +53,7 @@ public class LevelLoader {
 
             }
 
-            return new Level(12, tileMap,floorMap,ceilingMap, tileData);
+            return new Level(32, tileMap,floorMap,ceilingMap, tileData);
 
         } catch (IOException e) {
             e.printStackTrace();
@@ -97,9 +97,13 @@ public class LevelLoader {
             if(value.equals(" ")) { continue;}
 
             int intValue = 0;
+            float floatValue = 0;
 
             if(isInt(value)) {
                 intValue = Integer.parseInt(value);
+            }
+            if(MathHelper.IsFloat(value)){
+                floatValue = Float.parseFloat(value);
             }
 
             switch (i){
@@ -111,6 +115,9 @@ public class LevelLoader {
                     break;
                 case 2:
                     data.setTextureIndex(intValue);
+                    break;
+                case 3:
+                    data.setWallHeight(floatValue);
                     break;
             }
             i++;
@@ -163,7 +170,7 @@ public class LevelLoader {
         for(int key : tileData.keySet())
         {
             TileData data = tileData.get(key);
-            mapData += String.format("%ntile:%s,%d,%d",data.getName(),key,data.getTextureIndex());
+            mapData += String.format("%ntile:%s,%d,%d,%.2f",data.getName(),key,data.getTextureIndex(),data.getWallHeight());
         }
 
 

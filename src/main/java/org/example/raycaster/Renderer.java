@@ -32,25 +32,6 @@ public class Renderer {
 
 
 
-    /*
-    int[] map = {
-            1,1,1,1,1,1,1,1,1,1,1,1,
-            1,0,0,1,0,0,0,0,0,0,0,1,
-            1,0,0,1,0,0,0,0,0,0,0,1,
-            1,0,0,1,1,1,1,3,3,0,0,1,
-            1,0,0,0,0,0,0,0,0,0,0,1,
-            1,0,0,0,0,0,0,0,0,0,0,1,
-            9,0,0,0,0,2,0,0,0,0,0,9,
-            9,0,0,0,0,2,0,0,0,0,0,9,
-            9,0,0,0,0,2,0,0,0,0,0,9,
-            9,0,0,0,0,0,0,0,0,3,3,1,
-            9,0,0,0,0,0,0,0,0,3,3,1,
-            1,1,1,1,1,1,1,1,1,1,1,1,
-    };
-
-     */
-
-
 
     Level level = LevelLoader.loadMapFromFile("test");
 
@@ -68,7 +49,7 @@ public class Renderer {
 
 
 
-    int wallHeight = (int) (50);
+    int wallHeight = (int) (60);
 
     int floorHeight = (int) (0);
 
@@ -168,11 +149,14 @@ public class Renderer {
 
             ArrayList<RaycastResult> rays = level.castRay(activeCamera.getPositionX(), activeCamera.getPositionY(), rayAngle);
 
+            int lastTileInd = -1;
+
             for (RaycastResult ray : rays.reversed() ) {
                 if (!ray.didHit()) {
                     depth[i] = 1000000f;
                     continue;
                 }
+
 
                 // get angle from player to ray
                 float ca = MathHelper.getSafeAngle(activeCamera.getAngle()) - ray.getRayAngle();
@@ -188,7 +172,9 @@ public class Renderer {
 
                 int tileValue = level.getTile(ray.getTileIndex());
 
+
                 TileData tileData = level.getTileData(tileValue);
+                lastTileInd = tileValue;
 
 
 
@@ -201,7 +187,7 @@ public class Renderer {
                 // alot of opportunity there
 
 
-                float wallMulti = (tileValue > 1) ? 0.5f : 1f;
+                float wallMulti = tileData.getWallHeight();
 
                 int ScreenYDown = (int) (((HEIGHT / 2f) - ((floorHeight) - (activeCamera.getPositionZ()) * d )/ raydist));
                 int ScreenYUp = (int) (((HEIGHT / 2f) - ((float) (floorHeight + (wallHeight ) * wallMulti - (activeCamera.getPositionZ() )) * d ) / raydist));
@@ -272,7 +258,7 @@ public class Renderer {
 
 
 
-                    int[] rgb = TextureHandler.wallTexture.getSectionRGB(uvX,uvY, tileData.getTextureIndex());
+                    int[] rgb = TextureHandler.wallTexture.getSectionRGB(uvX,(uvY * wallMulti) % 1, tileData.getTextureIndex());
 
 
 
@@ -448,7 +434,7 @@ public class Renderer {
     }
 
 
-    public void drawSprite(float x, float y, float z){
+    public void drawSprite(float x, float y, float z, int stX, int stY, int etX, int etY, float worldSize, Texture texture){
 
         if (level == null) {return;}
 
@@ -482,8 +468,7 @@ public class Renderer {
 
 
             int spritePXS = 2;
-            float spriteWorldSize = 50;
-            int spriteSize = (int) ( (spriteWorldSize * fovVal) / b  ) ;
+            int spriteSize = (int) ( (worldSize * fovVal) / b  ) ;
 
             int startX = (int) ScreenX - spriteSize / 2;
             int endX = (int) ScreenX + spriteSize / 2;
@@ -535,7 +520,7 @@ public class Renderer {
                         float v = ( ( (float) (sy * spritePXS) - (int) ScreenY) ) / spriteSize;
                         v = Math.min(Math.max( v + 1,0), 0.99f);
 
-                        int[] rgb = TextureHandler.getRGB((int)(u * 64) , (int)(v * 64) );
+                        int[] rgb = texture.getSectionsRGB(u,v,stX,stY,etX,etY);
 
 
                         if(rgb[0] == 255 && rgb[1] == 0 && rgb[2] == 255)

@@ -1,5 +1,6 @@
 package org.example.raycaster.Entities;
 
+import javafx.scene.control.TextField;
 import org.example.raycaster.*;
 
 import java.util.ArrayList;
@@ -28,12 +29,6 @@ public class Ball extends Entity{
     boolean bFirstKick = false;
 
 
-
-
-    public Ball()
-    {
-
-    }
 
     public Ball(float inX, float inY, float inZ, Camera inPlayer, Level inLevel)
     {
@@ -106,14 +101,14 @@ public class Ball extends Entity{
         }
 
 
-        setPositionZ(getPositionZ() + (velZ ));
-        setPositionX(getPositionX() + (velX ));
-        setPositionY(getPositionY() + (velY ));
+        setPositionZ(getPositionZ() + (velZ));
+        setPositionX(getPositionX() + (velX));
+        setPositionY(getPositionY() + (velY));
     }
 
     @Override
     public void render(Renderer renderer)
     {
-        renderer.drawSprite(this.getPositionX(),this.getPositionY(),this.getPositionZ());
+        renderer.drawSprite(this.getPositionX(),this.getPositionY(),this.getPositionZ(), 0,0,1,1, 15, TextureHandler.sprites);
     }
 }

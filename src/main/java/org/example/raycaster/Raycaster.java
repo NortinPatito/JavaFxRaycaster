@@ -7,6 +7,7 @@ import javafx.scene.input.KeyCode;
 import org.example.raycaster.Entities.Ball;
 import org.example.raycaster.Entities.Entity;
 import org.example.raycaster.Entities.Player;
+import org.example.raycaster.Entities.TurnSprite;
 
 public class Raycaster {
 
@@ -67,6 +68,8 @@ public class Raycaster {
 
         entities.add(new Ball(200,200,40, playerCamera, renderer.level));
         entities.add(player);
+
+        entities.add(new TurnSprite(500,500,0,playerCamera));
 
         LevelLoader.loadMapFromFile("test");
 
